@@ -19,9 +19,6 @@ class BayesianClassifier:
         self.unique_words = 0
         self.a = 1
 
-        # Fill in the class constructor from file
-        self.fit(*process_data("./data/train.csv"))
-
     def fit(self, tweets: list, labels: list) -> None:
         """
         Fit Naive Bayes parameters according to train data X and y.
@@ -79,7 +76,6 @@ class BayesianClassifier:
         
         return probability
     
-
     def predict(self, tweet: str) -> str:
         """
         Predict label for a given message.
@@ -108,12 +104,11 @@ class BayesianClassifier:
             if self.predict(tweet) == correct_label:
                 accurate += 1
         
-        accuracy = accurate / length * 100
-
-        print(f"Accuracy: {accuracy}%")
+        accuracy = round(accurate / length * 100, 2)
+        return accuracy
             
     def __str__(self):
-        return f"Word count: {self.words}\nUnique words: {self.unique_words}\nTweets: {self.tweets}\n"
+        return f"Word count: {self.words}\nTweets: {self.tweets}\nUnique words: {self.unique_words}\n"
 
 
 def process_data(data_file: str) -> tuple:
@@ -122,6 +117,11 @@ def process_data(data_file: str) -> tuple:
   :param data_file: str - train data
   :return: pd.DataFrame|list, pd.DataFrame|list - X and y data frames or lists
    """
+   if "test" in data_file:
+      df = pd.read_csv(data_file)
+
+      return df["tweet"].values, df["label"].values
+
    def filter_tweets(tweet: str) -> str:
       """Filter all tweets from puntuation and stopwords"""
       tweet_array = list()
@@ -149,13 +149,15 @@ def process_data(data_file: str) -> tuple:
 
    return tweets, labels
 
-def process_tests(data_file: str) -> tuple:
-    """Function for processing test data"""
-    df = pd.read_csv(data_file)
 
-    return df["tweet"].values, df["label"].values
+if __name__ == "__main__":
+    train_X, train_y = process_data("./data/train.csv")
+    test_X, test_y = process_data("./data/test.csv")
 
+    classifier = BayesianClassifier()
+    classifier.fit(train_X, train_y)
+    classifier.predict_prob(test_X[0], test_y[0])
 
-nbc = BayesianClassifier()
-print(nbc)
-nbc.score(*process_tests("./data/test.csv"))
+    print("--"*10)
+    print(f"model score: {classifier.score(test_X, test_y)}%")
+    print("--"*10)
