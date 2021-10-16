@@ -1,3 +1,4 @@
+from random import random
 import pandas as pd
 import string
 import re
@@ -25,24 +26,41 @@ class BayesianClassifier:
         :param label: str - label
         :return: float - probability P(label|message)
         """
-        pass
+        return random()
 
-    def predict(self, message):
+    def predict(self, tweet: str) -> str:
         """
-        Predict label for a given message.
-        :param message: str - message
-        :return: str - label that is most likely to be truly assigned to a given message
+        Predict label for a given tweet.
+        :param tweet: str - tweet
+        :return: str - label that is most likely to be truly assigned to a given tweet
         """
-        pass
+        # Calculate probability for both labels
+        prob_discrim = self.predict_prob(tweet, "discrim")
+        prob_neutral = self.predict_prob(tweet, "neutral")
+        
+        # Assign label too whichever probability is bigger
+        label = "discrim" if prob_discrim > prob_neutral else "neutral"
+        return label
 
-    def score(self, X, y):
+    def score(self, X: list, y: list) -> float:
         """
         Return the mean accuracy on the given test data and labels - the efficiency of a trained model.
         :param X: pd.DataFrame|list - test data - messages
         :param y: pd.DataFrame|list - test labels
         :return:
         """
-        pass
+        discrim_all = discrim_corr = neutral_all = neutral_corr = 0
+
+        for tweet, correct_label in zip(X, y):
+            if correct_label == "discrim":
+                discrim_corr += correct_label == self.predict(tweet)
+                discrim_all += 1
+            else:
+                neutral_corr += correct_label == self.predict(tweet)
+                neutral_all += correct_label == "neutral"
+
+        # in this score, classifying 'neutral' is as important as 'discrim'.
+        return 0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all
 
 
 def process_data(data_file: str) -> tuple:
@@ -82,10 +100,10 @@ if __name__ == "__main__":
     print(f"{train_X[:10] = }")
     print(f"{train_y[:10] = }")
 
-    # classifier = BayesianClassifier()
+    classifier = BayesianClassifier()
     # classifier.fit(train_X, train_y)
     # classifier.predict_prob(test_X[0], test_y[0])
 
-    # print("--"*10)
-    # print(f"model score: {classifier.score(test_X, test_y)}%")
-    # print("--"*10)
+    print("--"*10)
+    print(f"model score: {classifier.score(test_X, test_y)}%")
+    print("--"*10)
