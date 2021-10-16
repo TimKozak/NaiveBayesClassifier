@@ -119,9 +119,8 @@ class BayesianClassifier:
                 neutral_corr += correct_label == self.predict(tweet)
                 neutral_all += correct_label == "neutral"
 
-        # 0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all
         accuracy = (discrim_corr + neutral_corr) / (discrim_all + neutral_all)
-        return round(accuracy * 100, 2), discrim_corr, discrim_all, neutral_corr, neutral_all 
+        return round(accuracy * 100, 2) # , discrim_corr, discrim_all, neutral_corr, neutral_all 
 
     def __str__(self):
         return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {len(self.unique_words)}\n"
