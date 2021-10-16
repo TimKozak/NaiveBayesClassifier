@@ -63,12 +63,10 @@ def process_data(data_file: str) -> tuple:
 
     def filter_tweets(tweet: str) -> str:
         """Filter a tweet from puntuation and stopwords"""
-        print(re.sub(remove_nonascii_re, '', tweet))
         tweet = " " + re.sub(remove_nonascii_re, '', tweet).lower().translate(punctuation_trans) + " "
         for word in stop_words:
             tweet = tweet.replace(" " + word + " ", " ")
         tweet = tweet.strip(" ")
-        input(tweet)
         return tweet
 
     df["tweet"] = df["tweet"].apply(filter_tweets)
