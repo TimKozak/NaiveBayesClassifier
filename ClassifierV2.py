@@ -111,18 +111,19 @@ class BayesianClassifier:
         :param y: pd.DataFrame|list - test labels
         :return:
         """
-        discrim_all = discrim_corr = neutral_all = neutral_corr = 0
+        discrim_false = discrim_true = neutral_false = neutral_true = 0
 
         for tweet, correct_label in zip(X, y):
             if correct_label == "discrim":
-                discrim_corr += correct_label == self.predict(tweet)
-                discrim_all += 1
+                discrim_true += correct_label == self.predict(tweet)
+                discrim_false += correct_label != self.predict(tweet)
             else:
-                neutral_corr += correct_label == self.predict(tweet)
-                neutral_all += correct_label == "neutral"
+                neutral_true += correct_label == self.predict(tweet)
+                neutral_false += correct_label != self.predict(tweet)
 
-        accuracy = (discrim_corr + neutral_corr) / (discrim_all + neutral_all)
-        return round(accuracy * 100, 2) , discrim_corr, discrim_all, neutral_corr, neutral_all 
+        # F-Score for correctly predicting discrimination tweets
+        accuracy = discrim_true / (discrim_true + 0.5 * (discrim_false + neutral_false))
+        return round(accuracy * 100, 2)
 
     def __str__(self):
         return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {len(self.unique_words)}\n"
