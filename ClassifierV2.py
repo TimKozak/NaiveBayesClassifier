@@ -8,25 +8,79 @@ class BayesianClassifier:
     Implementation of Naive Bayes classification algorithm.
     """
     def __init__(self):
-        pass
+        # Dictionaries of probabilities of words for two labels
+        self.prob_word_if_label = {"neutral": dict(), "discrim": dict()}
 
-    def fit(self, X, y):
+        # Count of words for both labels
+        self.label_words_count = {"neutral": 0, "discrim": 0}
+
+        # Count of tweets for both labels
+        self.labels_count = {"neutral": 0, "discrim": 0}
+
+        # Count of unique words & alpha param
+        self.unique_words_count = 0
+        self.alpha = 1
+
+    def fit(self, tweets: list, labels: list) -> None:
         """
         Fit Naive Bayes parameters according to train data X and y.
-        :param X: pd.DataFrame|list - train input/messages
-        :param y: pd.DataFrame|list - train output/labels
+        :param tweets: pd.DataFrame|list - train input/messages
+        :param labels: pd.DataFrame|list - train output/labels
         :return: None
         """
-        pass
+        def add_tweet_to_dict(tweet, label) -> None:
+            """Fill in dictionaries with all words"""
+            other_label = "discrim" if label == "neutral" else "neutral"
 
-    def predict_prob(self, message, label):
+            for word, count in tweet.items():
+                if word in self.prob_word_if_label[label].keys():
+                    self.prob_word_if_label[label][word] += count
+                    self.label_words_count[label] += count
+                else:
+                    self.prob_word_if_label[label][word] = count
+                    self.label_words_count[label] = count
+                    self.unique_words_count += 1
+                
+                if word not in self.prob_word_if_label[other_label].keys():
+                    self.prob_word_if_label[other_label][word] = 0
+
+        def convert_frequency_to_probability(label: str) -> None: 
+            """Convert frequency to probability with param alpha for handling 0 probabilities"""
+            label_words_a = self.label_words_count[label] + self.alpha * self.unique_words_count
+
+            for word, count in self.prob_word_if_label[label].items():
+                self.prob_word_if_label[label][word] = (count + self.alpha) / label_words_a  # P(feature|class)
+
+        # Iterate through all tweets and make dictionaries of word frequencies
+        for tweet, label in zip(tweets, labels):
+            self.labels_count[label] += 1
+
+            add_tweet_to_dict(tweet, label)
+
+        # Convert frequency dictionaries to probability dictionaries
+        convert_frequency_to_probability("neutral")
+        convert_frequency_to_probability("discrim")
+
+    def predict_prob(self, tweet: str, label: str) -> float:
         """
         Calculate the probability that a given label can be assigned to a given message.
-        :param message: str - input message
+        :param tweet: str - input message
         :param label: str - label
         :return: float - probability P(label|message)
         """
-        return random()
+        # Set initial probability to the P(label)
+        probability = self.labels_count[label] / (self.labels_count["neutral"] + self.labels_count["discrim"])
+
+        other_label = "discrim" if label == "neutral" else "neutral"
+
+        # Multiply by P(word|label)
+        for word in tweet.split():
+            if word in self.prob_word_if_label[label]:
+                probability *= self.prob_word_if_label[label][word] / (
+                    self.prob_word_if_label[label][word] + self.prob_word_if_label[other_label][word]
+                )  # P(feature|class) / P(feature)
+
+        return probability
 
     def predict(self, tweet: str) -> str:
         """
@@ -60,7 +114,10 @@ class BayesianClassifier:
                 neutral_all += correct_label == "neutral"
 
         # in this score, classifying 'neutral' is as important as 'discrim'.
-        return 0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all
+        return round(0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all, 2)
+    
+    def __str__(self):
+        return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {self.unique_words_count}\n"
 
 
 def process_data(data_file: str) -> tuple:
@@ -102,7 +159,7 @@ if __name__ == "__main__":
 
     classifier = BayesianClassifier()
     # classifier.fit(train_X, train_y)
-    # classifier.predict_prob(test_X[0], test_y[0])
+    classifier.predict_prob(test_X[0], test_y[0])
 
     print("--"*10)
     print(f"model score: {classifier.score(test_X, test_y)}%")
