@@ -20,6 +20,15 @@ class BayesianClassifier:
         # Count of unique words & alpha param
         self.unique_words = set()
         self.alpha = 1
+    
+    def tokenize(self, lst):
+        new_tweets = []
+        for index in range(len(lst)):
+            sp = lst[index].split(" ")
+            new_tweets.append([
+                item for item in sp if item != ''
+            ])
+        return new_tweets
 
     def fit(self, tweets: list, labels: list) -> None:
         """
@@ -28,10 +37,6 @@ class BayesianClassifier:
         :param labels: pd.DataFrame|list - train output/labels
         :return: None
         """
-        def tokenize(lst):
-            for index in range(len(lst)):
-                lst[index] = [item for item in lst[index].split(" ") if item != '']
-
         def add_tweet_to_dict(tweet, label) -> None:
             """Fill in dictionaries with all words"""
             other_label = "discrim" if label == "neutral" else "neutral"
@@ -56,7 +61,7 @@ class BayesianClassifier:
                 # Compute P(word|label)
                 self.prob_word_if_label[label][word] = (count + self.alpha) / words_total_a
         
-        tokenize(tweets)
+        tweets = self.tokenize(tweets)
 
         # Iterate through all tweets and make dictionaries of word frequencies
         for tweet, label in zip(tweets, labels):
@@ -80,7 +85,7 @@ class BayesianClassifier:
         other_label = "discrim" if label == "neutral" else "neutral"
 
         # Multiply by P(word|label)
-        for word in tweet.split():
+        for word in self.tokenize([tweet])[0]:
             if word in self.prob_word_if_label[label]:
                 probability *= self.prob_word_if_label[label][word] / (
                     self.prob_word_if_label[label][word] + self.prob_word_if_label[other_label][word]
@@ -120,7 +125,7 @@ class BayesianClassifier:
                 neutral_all += correct_label == "neutral"
 
         accuracy = (discrim_corr + neutral_corr) / (discrim_all + neutral_all)
-        return round(accuracy * 100, 2) # , discrim_corr, discrim_all, neutral_corr, neutral_all 
+        return round(accuracy * 100, 2)  # , discrim_corr, discrim_all, neutral_corr, neutral_all 
 
     def __str__(self):
         return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {len(self.unique_words)}\n"
