@@ -18,7 +18,7 @@ class BayesianClassifier:
         self.labels_count = {"neutral": 0, "discrim": 0}
 
         # Count of unique words & alpha param
-        self.unique_words_count = 0
+        self.unique_words = set()
         self.alpha = 1
 
     def fit(self, tweets: list, labels: list) -> None:
@@ -28,33 +28,39 @@ class BayesianClassifier:
         :param labels: pd.DataFrame|list - train output/labels
         :return: None
         """
+        def tokenize(lst):
+            for index in range(len(lst)):
+                lst[index] = [item for item in lst[index].split(" ") if item != '']
+
         def add_tweet_to_dict(tweet, label) -> None:
             """Fill in dictionaries with all words"""
             other_label = "discrim" if label == "neutral" else "neutral"
 
-            for word, count in tweet.items():
-                if word in self.prob_word_if_label[label].keys():
-                    self.prob_word_if_label[label][word] += count
-                    self.label_words_count[label] += count
+            for word in tweet:
+                self.unique_words.add(word)
+                if word in self.prob_word_if_label[label]:
+                    self.prob_word_if_label[label][word] += 1
                 else:
-                    self.prob_word_if_label[label][word] = count
-                    self.label_words_count[label] = count
-                    self.unique_words_count += 1
+                    self.prob_word_if_label[label][word] = 1
                 
-                if word not in self.prob_word_if_label[other_label].keys():
+                self.label_words_count[label] += 1
+                
+                if word not in self.prob_word_if_label[other_label]:
                     self.prob_word_if_label[other_label][word] = 0
 
         def convert_frequency_to_probability(label: str) -> None: 
             """Convert frequency to probability with param alpha for handling 0 probabilities"""
-            label_words_a = self.label_words_count[label] + self.alpha * self.unique_words_count
+            words_total_a = self.label_words_count[label] + self.alpha * len(self.unique_words)
 
             for word, count in self.prob_word_if_label[label].items():
-                self.prob_word_if_label[label][word] = (count + self.alpha) / label_words_a  # P(feature|class)
+                # Compute P(word|label)
+                self.prob_word_if_label[label][word] = (count + self.alpha) / words_total_a
+        
+        tokenize(tweets)
 
         # Iterate through all tweets and make dictionaries of word frequencies
         for tweet, label in zip(tweets, labels):
             self.labels_count[label] += 1
-
             add_tweet_to_dict(tweet, label)
 
         # Convert frequency dictionaries to probability dictionaries
@@ -91,7 +97,7 @@ class BayesianClassifier:
         # Calculate probability for both labels
         prob_discrim = self.predict_prob(tweet, "discrim")
         prob_neutral = self.predict_prob(tweet, "neutral")
-        
+
         # Assign label too whichever probability is bigger
         label = "discrim" if prob_discrim > prob_neutral else "neutral"
         return label
@@ -113,12 +119,12 @@ class BayesianClassifier:
                 neutral_corr += correct_label == self.predict(tweet)
                 neutral_all += correct_label == "neutral"
 
-        # in this score, classifying 'neutral' is as important as 'discrim'.
-        return round(0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all, 2)
-    
-    def __str__(self):
-        return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {self.unique_words_count}\n"
+        # 0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all
+        accuracy = (discrim_corr + neutral_corr) / (discrim_all + neutral_all)
+        return round(accuracy * 100, 2), discrim_corr, discrim_all, neutral_corr, neutral_all 
 
+    def __str__(self):
+        return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {len(self.unique_words)}\n"
 
 def process_data(data_file: str) -> tuple:
     """
@@ -126,6 +132,7 @@ def process_data(data_file: str) -> tuple:
     :param data_file: str - train data
     :return: pd.DataFrame|list, pd.DataFrame|list - X and y data frames or lists
     """
+
     df = pd.read_csv(data_file)
 
     with open("./data/stop_words.txt", mode="r", encoding="ascii") as stop_words_file:
@@ -154,11 +161,8 @@ if __name__ == "__main__":
     train_X, train_y = process_data("./data/train.csv")
     test_X, test_y = process_data("./data/test.csv")
 
-    print(f"{train_X[:10] = }")
-    print(f"{train_y[:10] = }")
-
     classifier = BayesianClassifier()
-    # classifier.fit(train_X, train_y)
+    classifier.fit(train_X, train_y)
     classifier.predict_prob(test_X[0], test_y[0])
 
     print("--"*10)
