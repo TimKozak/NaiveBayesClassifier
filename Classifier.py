@@ -87,7 +87,7 @@ class BayesianClassifier:
         prob_neutral = self.predict_prob(tweet, "neutral")
         
         # Assign label too whichever probability is bigger
-        label = "discrim" if max(prob_discrim, prob_neutral) == "discrim" else "neutral"
+        label = "discrim" if prob_discrim > prob_neutral else "neutral"
         return label
 
     def score(self, tweets, correct_labels) -> None:
