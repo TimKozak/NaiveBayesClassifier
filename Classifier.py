@@ -112,42 +112,42 @@ class BayesianClassifier:
 
 
 def process_data(data_file: str) -> tuple:
-   """
-  Function for data processing and split it into X and y sets.
-  :param data_file: str - train data
-  :return: pd.DataFrame|list, pd.DataFrame|list - X and y data frames or lists
-   """
-   if "test" in data_file:
-      df = pd.read_csv(data_file)
+    """
+    Function for data processing and split it into X and y sets.
+    :param data_file: str - train data
+    :return: pd.DataFrame|list, pd.DataFrame|list - X and y data frames or lists
+    """
+    if "test" in data_file:
+        df = pd.read_csv(data_file)
 
-      return df["tweet"].values, df["label"].values
+        return df["tweet"].values, df["label"].values
 
-   def filter_tweets(tweet: str) -> str:
-      """Filter all tweets from puntuation and stopwords"""
-      tweet_array = list()
-      for word in tweet.split():
-         word = word.lower().translate(str.maketrans("", "", string.punctuation))
-         if word not in stop_words:
-            tweet_array.append(word)
-      return " ".join(tweet_array)
+    def filter_tweets(tweet: str) -> str:
+        """Filter all tweets from puntuation and stopwords"""
+        tweet_array = list()
+        for word in tweet.split():
+            word = word.lower().translate(str.maketrans("", "", string.punctuation))
+            if word not in stop_words:
+                tweet_array.append(word)
+        return " ".join(tweet_array)
 
-   def tweets_to_features(tweet: str) -> str:
-      tweet_dict = dict()
-      for word in tweet.split():
-         tweet_dict[word] = tweet.count(word)
-      return tweet_dict
+    def tweets_to_features(tweet: str) -> str:
+        tweet_dict = dict()
+        for word in tweet.split():
+            tweet_dict[word] = tweet.count(word)
+        return tweet_dict
 
-   df = pd.read_csv(data_file)
+    df = pd.read_csv(data_file)
 
-   with open("./data//stop_words.txt", mode="r", encoding="ascii") as stop_words_file:
-      stop_words = [word.strip("\n") for word in stop_words_file.readlines()]
+    with open("./data//stop_words.txt", mode="r", encoding="ascii") as stop_words_file:
+        stop_words = [word.strip("\n") for word in stop_words_file.readlines()]
 
-   df["tweet"] = df["tweet"].apply(filter_tweets)
+    df["tweet"] = df["tweet"].apply(filter_tweets)
 
-   tweets = df['tweet'].apply(tweets_to_features).values
-   labels = df['label'].values
+    tweets = df['tweet'].apply(tweets_to_features).values
+    labels = df['label'].values
 
-   return tweets, labels
+    return tweets, labels
 
 
 if __name__ == "__main__":
