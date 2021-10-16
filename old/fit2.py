@@ -44,6 +44,9 @@ class BayesianClassifier:
                     self.probs[label][word] = 1
                     self.words[label] += 1
                     self.unique_words += 1
+                
+                if word not in self.probs[other_label].keys():
+                    self.probs[other_label][word] = 0
 
         def convert_frequency_to_probability(label: str, a: int) -> None:
             words_with_a = self.words[label] + a * self.unique_words
@@ -95,22 +98,26 @@ class BayesianClassifier:
         label = "discrim" if prob_discrim > prob_neutral else "neutral"
         return label
 
-    def score(self, tweets, correct_labels) -> None:
+    def score(self, X: list, y: list) -> float:
         """
         Return the mean accuracy on the given test data and labels - the efficiency of a trained model.
-        :param tweets: pd.DataFrame|list - test data - messages
-        :param correct_labels: pd.DataFrame|list - test labels
+        :param X: pd.DataFrame|list - test data - messages
+        :param y: pd.DataFrame|list - test labels
         :return:
         """
-        accurate = 0
-        length = len(tweets)
+        discrim_all = discrim_corr = neutral_all = neutral_corr = 0
 
-        for tweet, correct_label in zip(tweets, correct_labels):
-            if self.predict(tweet) == correct_label:
-                accurate += 1
+        for tweet, correct_label in zip(X, y):
+            if correct_label == "discrim":
+                discrim_corr += correct_label == self.predict(tweet)
+                discrim_all += 1
+            else:
+                neutral_corr += correct_label == self.predict(tweet)
+                neutral_all += correct_label == "neutral"
 
-        accuracy = round(accurate / length * 100, 2)
-        return accuracy
+        # in this score, classifying 'neutral' is as important as 'discrim'.
+        accuracy = (discrim_corr + neutral_corr) / (discrim_all + neutral_all)# 0.5 * discrim_corr / discrim_all + 0.5 * neutral_corr / neutral_all 
+        return round(accuracy * 100, 2), discrim_corr, discrim_all, neutral_corr, neutral_all
 
     def __str__(self):
         return f"Word count: {self.words}\nTweets: {self.tweets}\nUnique words: {self.unique_words}\n"
