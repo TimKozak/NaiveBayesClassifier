@@ -18,8 +18,8 @@ class BayesianClassifier:
 
         # Count of unique words & alpha param
         self.unique_words = set()
-        self.alpha = 1
-    
+        self.alpha = 1  # 0.2
+
     def tokenize(self, lst):
         new_tweets = []
         for index in range(len(lst)):
@@ -140,10 +140,14 @@ def process_data(data_file: str) -> tuple:
     with open("./data/stop_words.txt", mode="r", encoding="ascii") as stop_words_file:
         stop_words = [word.strip("\n") for word in stop_words_file.readlines()]
 
-    punctuation = string.punctuation.replace("@", "")
-    redundantchars = "â¦"
-    punctuation_trans = str.maketrans(punctuation, " " * len(punctuation), redundantchars)
+    # regexp to remove non-acsii
     remove_nonascii_re = re.compile(r"(&amp;|[^\x00-\x7F]+)")
+    # punctuation to replace by spaces
+    punctuation_sp = "!\"#$%()*,-./:;?@[\]{|}~"
+    # punctuation to remove
+    punctuation_rm = string.punctuation.translate(str.maketrans("", "", punctuation_sp))
+    # make the translation
+    punctuation_trans = str.maketrans(punctuation_sp, " " * len(punctuation_sp), punctuation_rm)
 
     def filter_tweets(tweet: str) -> str:
         """Filter a tweet from puntuation and stopwords"""
