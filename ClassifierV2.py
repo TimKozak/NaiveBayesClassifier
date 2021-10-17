@@ -16,9 +16,9 @@ class BayesianClassifier:
         # Count of tweets for both labels
         self.labels_count = {"neutral": 0, "discrim": 0}
 
-        # Count of unique words & alpha param
+        # Set of unique words & alpha param
         self.unique_words = set()
-        self.alpha = 1  # 0.2
+        self.alpha = 0.19
 
     def tokenize(self, lst):
         new_tweets = []
@@ -39,19 +39,20 @@ class BayesianClassifier:
             other_label = "discrim" if label == "neutral" else "neutral"
 
             for word in tweet:
-                self.unique_words.add(word)
                 if word in self.prob_word_if_label[label]:
                     self.prob_word_if_label[label][word] += 1
                 else:
                     self.prob_word_if_label[label][word] = 1
 
                 self.label_words_count[label] += 1
+                self.unique_words.add(word)
 
                 if word not in self.prob_word_if_label[other_label]:
                     self.prob_word_if_label[other_label][word] = 0
 
         def convert_frequency_to_probability(label: str) -> None: 
             """Convert frequency to probability with param alpha for handling 0 probabilities"""
+            # Laplace smoothing (remove P(word|label)=0)
             words_total_a = self.label_words_count[label] + self.alpha * len(self.unique_words)
 
             for word, count in self.prob_word_if_label[label].items():
@@ -123,6 +124,7 @@ class BayesianClassifier:
 
         # F-Score for correctly predicting discrimination tweets
         accuracy = discrim_true / (discrim_true + 0.5 * (discrim_false + neutral_false))
+        # accuracy = (discrim_true + neutral_true) / (discrim_false + neutral_false + discrim_true + neutral_true)
         return round(accuracy * 100, 2)
 
     def __str__(self):
