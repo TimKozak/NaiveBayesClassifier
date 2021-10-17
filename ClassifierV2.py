@@ -18,13 +18,14 @@ class BayesianClassifier:
 
         # Set of unique words & alpha param
         self.unique_words = set()
-        self.alpha = 0.19
+        self.alpha = 0.154
 
     def tokenize(self, lst):
         new_tweets = []
         for index in range(len(lst)):
             sp = lst[index].split()  # grams
-            new_tweets.append(set(sp))  # dict(map(lambda word: (word, sp.count(word)), set(sp)))
+            bigrams = set(map(lambda x: x[0] + x[1], zip(sp[:-1], sp[1:])))
+            new_tweets.append(set(sp) | bigrams)  # dict(map(lambda word: (word, sp.count(word)), set(sp)))
         return new_tweets
 
     def fit(self, tweets: list, labels: list) -> None:
@@ -124,8 +125,8 @@ class BayesianClassifier:
 
         # F-Score for correctly predicting discrimination tweets
         accuracy = discrim_true / (discrim_true + 0.5 * (discrim_false + neutral_false))
-        # accuracy = (discrim_true + neutral_true) / (discrim_false + neutral_false + discrim_true + neutral_true)
-        return round(accuracy * 100, 2)
+        oldacc = (discrim_true + neutral_true) / (discrim_false + neutral_false + discrim_true + neutral_true)
+        return round(accuracy * 100, 2), round(oldacc * 100, 2)
 
     def __str__(self):
         return f"Word count: {self.label_words_count}\nTweets: {self.labels_count}\nUnique words: {len(self.unique_words)}\n"
